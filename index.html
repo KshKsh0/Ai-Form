@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ai Form Tester</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 30px; background: #f0f2f5; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 700px; margin: auto; }
+        h2 { color: #1a73e8; margin-top: 0; }
+        textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; resize: none; }
+        button { background: #1a73e8; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+        button:disabled { background: #ccc; }
+        #form-preview { margin-top: 30px; padding: 20px; border: 2px dashed #1a73e8; border-radius: 12px; background: #fff; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Jordan Survey Generator</h2>
+    <textarea id="promptInput" placeholder="Describe the survey you want (e.g., 'A customer satisfaction survey for a restaurant in Amman...')"></textarea>
+    <button id="genBtn">Generate UI</button>
+
+    <div id="form-preview">
+        <p style="text-align:center; color:#999;">Your AI-generated form will appear here.</p>
+    </div>
+</div>
+
+<script>
+    const btn = document.getElementById('genBtn');
+    const preview = document.getElementById('form-preview');
+    const input = document.getElementById('promptInput');
+
+    btn.addEventListener('click', async () => {
+        const text = input.value.trim();
+        if(!text) return alert("Please enter a description!");
+
+        btn.disabled = true;
+        btn.innerText = "Generating with Gemini...";
+        preview.innerHTML = "Working...";
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    "id": Math.floor(Math.random() * 1000), // Random ID
+                    "txt": text
+                })
+            });
+
+            const data = await response.json();
+            
+            // Your API returns: { "output": { "html": "...", "title": "..." } }
+            // So we access data.output.html
+            if(data.output && data.output.html) {
+                preview.innerHTML = data.output.html;
+            } else {
+                preview.innerHTML = "Error: LLM did not return HTML properly.";
+            }
+
+        } catch (err) {
+            preview.innerHTML = "Connection Error: " + err.message;
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Generate UI";
+        }
+    });
+</script>
+
+</body>
+</html>
