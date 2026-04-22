@@ -3,16 +3,14 @@ if "SSL_CERT_FILE" in os.environ:
     del os.environ["SSL_CERT_FILE"]
 from fastapi import FastAPI, HTTPException
 from schemas.dataSchema import promptStructer
-from LLM.providers.GeminiProvider import GeminiProvider
 from LLM.providers.OllamaProvider import OllamaProvider
 from fastapi.middleware.cors import CORSMiddleware
-from helper.config import get_settings
 import ollama
 
 
 
 app = FastAPI()
-settings= get_settings()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows your local HTML file to access the API
@@ -28,17 +26,11 @@ async def status():
 @app.post('/generate')
 async def generate_json(prompt:promptStructer):
     provider_name = prompt.provider.lower()
-    selected_provider = None
     
-    if provider_name == 'ollama':
-        selected_provider = OllamaProvider(model_id=prompt.model)
-    elif provider_name == 'gemini':
-        # Ensure to give a fallback model or use settings API key
-        model_id = prompt.model if prompt.model else 'gemini-2.5-flash'
-        selected_provider = GeminiProvider(api_key=settings.GEMINI_API_KEY, model_id=model_id)
-    
-    if selected_provider is None:
-        raise HTTPException(status_code = 400 ,detail=f"Provider '{prompt.provider}' not found.")
+    if provider_name != 'ollama':
+        raise HTTPException(status_code = 400 ,detail=f"Only 'ollama' provider is supported.")
+        
+    selected_provider = OllamaProvider(model_id=prompt.model)
     
      
     system_prompt = """
